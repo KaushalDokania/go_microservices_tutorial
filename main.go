@@ -13,12 +13,10 @@ import (
 
 func main() {
 	logger := log.New(os.Stdout, "microservice-api", log.LstdFlags)
-	helloHander := handlers.NewHello(logger)
-	goodByeHandler := handlers.NewGoodbye(logger)
+	productHandler := handlers.NewProducts(logger)
 
 	sm := http.NewServeMux()
-	sm.Handle("/", helloHander)
-	sm.Handle("/bye", goodByeHandler)
+	sm.Handle("/", productHandler)
 
 	s := &http.Server{
 		Addr:         ":8080",
@@ -29,6 +27,7 @@ func main() {
 	}
 
 	go func() {
+		logger.Println("Starting server on port 8080...")
 		err := s.ListenAndServe()
 		if err != nil {
 			logger.Fatal(err)
