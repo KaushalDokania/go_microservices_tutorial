@@ -1,6 +1,8 @@
 package data
 
 import (
+	"encoding/json"
+	"io"
 	"time"
 )
 
@@ -15,7 +17,16 @@ type Product struct {
 	DeletedOn   string  `json:"-"`
 }
 
-func GetProducts() []*Product {
+type Products []*Product
+
+// using json encoder instead of json Marshalling is efficient as we don't need to allocate
+// memory for temporary bytes returned by json.Marshall() which can be significant in case of large data
+func (p *Products) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(p)
+}
+
+func GetProducts() Products {
 	return productList
 }
 
