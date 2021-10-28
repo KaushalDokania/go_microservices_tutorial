@@ -3,6 +3,8 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/KaushalDokania/go_microservices_tutorial/data"
 )
@@ -21,6 +23,29 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	} else if r.Method == http.MethodPost {
 		p.addProducts(rw, r)
+	} else if r.Method == http.MethodPut {
+		reg := regexp.MustCompile(`/([0-9]+)`)
+		g := reg.FindAllStringSubmatch(r.URL.Path, -1)
+
+		if len(g) != 1 {
+			http.Error(rw, "Invalid URI", http.StatusBadRequest)
+			return
+		}
+
+		if len(g[0]) != 2 {
+			http.Error(rw, "Invalid URI", http.StatusBadRequest)
+			return
+		}
+
+		idString := g[0][1]
+		id, err := strconv.Atoi(idString)
+		if err != nil {
+			http.Error(rw, "Invalid URI", http.StatusBadRequest)
+			return
+		}
+
+		p.UpdateProducts(id, rw, r)
+		p.logger.Println("Got id: ", id)
 	}
 	// catch all
 	rw.WriteHeader(http.StatusMethodNotAllowed)
@@ -46,4 +71,25 @@ func (p *Products) addProducts(rw http.ResponseWriter, r *http.Request) {
 	}
 	// p.logger.Printf("Product: %#v", prod)
 	data.AddProduct(prod)
+}
+
+func (p *Products) UpdateProducts(id int, rw http.ResponseWriter, r *http.Request) {
+	p.logger.Println("Handle PUT Products")
+
+	prod := &data.Product{}
+
+	err := prod.FromJSON(r.Body)
+	if err != nil {
+		http.Error(rw, "Unable to Marshall json", http.StatusBadRequest)
+	}
+
+	err = data.UpdateProduct(id, prod)
+	if err == data.ErrorProductNotFound {
+		http.Error(rw, "Product not found", http.StatusBadRequest)
+		return
+	} else if err != nil {
+		http.Error(rw, "Product not found", http.StatusInternalServerError)
+		return
+	}
+
 }

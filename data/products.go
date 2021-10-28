@@ -2,13 +2,14 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 )
 
 type Product struct {
 	ID          int     `json:"id"`
-	Name        string  `json:"name`
+	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	Price       float32 `json:"price"`
 	SKU         string  `json:"sku"`
@@ -38,6 +39,28 @@ func GetProducts() Products {
 func AddProduct(p *Product) {
 	p.ID = getNextID()
 	productList = append(productList, p)
+}
+
+func UpdateProduct(id int, p *Product) error {
+	_, pos, err := findProduct(id)
+	if err != nil {
+		return err
+	}
+
+	p.ID = id
+	productList[pos] = p
+	return nil
+}
+
+var ErrorProductNotFound = fmt.Errorf("Product not found")
+
+func findProduct(id int) (*Product, int, error) {
+	for i, p := range productList {
+		if p.ID == id {
+			return p, i, nil
+		}
+	}
+	return nil, -1, ErrorProductNotFound
 }
 
 func getNextID() int {
