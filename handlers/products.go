@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -71,9 +72,22 @@ func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 		err := prod.FromJSON(r.Body)
 		if err != nil {
 			p.logger.Println("[ERROR] deserializing product", err)
-			http.Error(rw, "Unable to Marshall json", http.StatusBadRequest)
+			http.Error(rw, "Error reading product", http.StatusBadRequest)
 			return
 		}
+
+		// validate the product
+		err = prod.Validate()
+		if err != nil {
+			p.logger.Println("[ERROR] validating product", err)
+			http.Error(
+				rw,
+				fmt.Sprint("Error validating product: ", err),
+				http.StatusBadRequest,
+			)
+			return
+		}
+
 		// add the product to the context
 		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
 		r = r.WithContext(ctx)
